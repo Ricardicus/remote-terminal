@@ -21,10 +21,30 @@ body {
 </script>
 <script>
 var s = io();
+var d = new Date();
 
-var term = $('#terminal-div').terminal(function(command) {
-    s.emit("input", command);
-});
+var term = $('#terminal-div').terminal(
+    function(command) {
+        s.emit("input", command);
+    },
+    {
+      "prompt": '$ ',
+      "greetings": `
+[[gb;teal;black]
+__________.__                        .___.__                     
+\\______   \\__| ____ _____ _______  __| _/|__| ____  __ __  ______
+ |       _/  |/ ___\\\\__  \\\\_  __ \\/ __ | |  |/ ___\\|  |  \\/  ___/
+ |    |   \\  \\  \\___ / __ \\|  | \\/ /_/ | |  \\  \\___|  |  /\\___ \\ 
+ |____|_  /__|\\___  >____  /__|  \\____ | |__|\\___  >____//____  >
+        \\/        \\/     \\/           \\/         \\/           \\/] 
+
+            [[gb;grey;black]You are using Ricardicus web terminal]
+        https://github.com/Ricardicus/remote-terminal
+
+  ` + d + `
+`
+}
+);
 
 s.on("terminal-output-stdout", (msg) => {
   $("#output-monitor").css("color", "white");
