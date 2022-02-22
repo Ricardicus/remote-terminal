@@ -25,6 +25,11 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(express.static(__dirname + '/public'));
 
+var startDir = false;
+if ( process.argv.length >= 3 ) {
+  startDir = process.argv[2];
+}
+
 /* BASH is used */
 var shell = "bash";
 
@@ -121,6 +126,10 @@ app.get('*', function(req, res) {
 });
 
 io.on('connection', (socket) => {
+  if ( startDir ) {
+    process.chdir(startDir);
+  }
+
   var interface = initializeInterface(socket);
 
   socket.on('disconnect', () => {
