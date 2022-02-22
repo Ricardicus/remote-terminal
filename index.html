@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="js/jquery-3.3.1.min.js"></script>
+<script src="js/jquery.terminal.min.js"></script>
+<link rel="stylesheet" href="css/jquery.terminal.min.css"/>
+</head>
+<style>
+body {
+  background: black
+}
+.full-display {
+  height: 100%;
+  width: 100%;
+}
+</style>
+<body class="full-display">
+<div id="terminal-div" class="full-display"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+</script>
+<script>
+var s = io();
+
+var term = $('#terminal-div').terminal(function(command) {
+    s.emit("input", command);
+});
+
+s.on("terminal-output-stdout", (msg) => {
+  $("#output-monitor").css("color", "white");
+  $("#output-monitor").append(msg["message"]);
+  term.echo(msg["message"]);
+});
+s.on("terminal-output-stderr", (msg) => {
+  $("#output-monitor").css("color", "#883333");
+  $("#output-monitor").append(msg["message"]);
+  term.echo("[[gb;red;black]" + msg["message"] + "]");
+});
+s.on("terminal-refresh", (msg) => {
+  document.getElementById("output-monitor").innerHTML = "";
+});
+s.on("terminal-sample", (msg) => {
+  $("#input-script").val(msg["message"])
+});
+s.on("terminal-exit-code", (msg) => {
+  document.getElementById("output-monitor-exit-code").innerHTML = "Exit code: " + msg["message"]
+    + ( msg["message"] == 0 ? " (Success)" : "" );
+});
+
+</script>
+</body>
+</html>
+
