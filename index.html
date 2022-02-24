@@ -3,6 +3,7 @@
 <head>
 <script src="js/jquery-3.3.1.min.js"></script>
 <script src="js/jquery.terminal.min.js"></script>
+<script src="js/echo_newline.js"></script>
 <link rel="stylesheet" href="css/jquery.terminal.min.css"/>
 </head>
 <style>
@@ -41,7 +42,7 @@ __________.__                        .___.__
             [[gb;grey;black]You are using Ricardicus web terminal]
         https://github.com/Ricardicus/remote-terminal
 
-  ` + d + `
+` + d + `
 `
 }
 );
@@ -49,12 +50,18 @@ __________.__                        .___.__
 s.on("terminal-output-stdout", (msg) => {
   $("#output-monitor").css("color", "white");
   $("#output-monitor").append(msg["message"]);
-  term.echo(msg["message"]);
+  console.log(msg["message"]);
+  term.echo(msg["message"], {newline: false});
 });
 s.on("terminal-output-stderr", (msg) => {
   $("#output-monitor").css("color", "#883333");
   $("#output-monitor").append(msg["message"]);
-  term.echo("[[gb;red;black]" + msg["message"] + "]");
+  term.echo("[[gb;red;black]" + msg["message"] + "]", {newline: false});
+});
+s.on("terminal-exit-code", () => {
+  $("#output-monitor").css("color", "#883333");
+  $("#output-monitor").append("Connection closed");
+  term.echo("[[gb;red;black]" + "Connection to terminal closed" + "]");
 });
 s.on("terminal-refresh", (msg) => {
   document.getElementById("output-monitor").innerHTML = "";

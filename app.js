@@ -12,7 +12,8 @@
 
 var express = require('express')
 
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
+const Stream = require('stream');
 var app = express();
 var fs = require('fs');
 var bodyParser  = require('body-parser');
@@ -38,46 +39,8 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
-app.get('/js/:script([a-z][a-z]*)', function(req, res) {
-    res.sendFile(__dirname + '/js/' + req.params.script);
-});
-
-app.get('/doc', function(req, res) {
-    res.sendFile(__dirname + '/doc/index.html');
-});
-
-app.get('/favicon.ico', function(req, res) {
-    res.sendFile(__dirname + '/favicon.ico');
-});
-
-app.get('/doc/*', function(req, res) {
-    if ( req.originalUrl.includes("?") ) {
-        res.sendFile(__dirname + req.originalUrl.split("?")[0]);
-    } else {
-        res.sendFile(__dirname + req.originalUrl);
-    }
-});
-
 app.get('/node_modules/*', function(req, res) {
         res.sendFile(__dirname + req.originalUrl);
-});
-
-
-app.get('/images/*', function(req, res) {
-    res.sendFile(__dirname + req.originalUrl);
-});
-
-app.get('/samples/:script([a-z][a-z]*)', function(req, res) {
-    var file = __dirname + '/samples/' + req.params.script;
-    res.sendFile(file);
-
-    /* Read file content, send it with socket.io */
-    fs.readFile(file, "utf8", function(err, data){
-        if(err) throw err;
-
-        io.emit("terminal-sample", {message: data});        
-    });
-
 });
 
 child = null;
@@ -86,7 +49,8 @@ child = null;
 function initializeInterface(socket) {
   var interface = {
       terminal: spawn("/bin/sh"),
-      handler: console.log,
+      handler: function(command) {},
+      active: true,
       send: (data) => {
           interface.terminal.stdin.write(data + '\n');
       },
@@ -95,6 +59,7 @@ function initializeInterface(socket) {
           interface.handler({ type: 'cwd', data: cwd });
       }
   };
+
   // Handle Data
   interface.terminal.stdout.on('data', (buffer) => {
       interface.handler({ type: 'data', data: buffer });
@@ -110,6 +75,7 @@ function initializeInterface(socket) {
   // Handle Closure
   interface.terminal.on('close', () => {
       interface.handler({ type: 'closure', data: null });
+      interface.active = false;
       socket.emit("terminal-exit-code", {message: 1337});
   });
 
@@ -129,11 +95,18 @@ io.on('connection', (socket) => {
   if ( startDir ) {
     process.chdir(startDir);
   }
+  var address = socket.handshake.address;
+
+  var d = new Date();
+
+  console.log(d + ': Connection established: ' + address);
 
   var interface = initializeInterface(socket);
 
   socket.on('disconnect', () => {
     /* User disconnected */
+    console.log(d + ': Connection closed: ' + address);
+
     closeInterface(interface);
   });
 
@@ -143,5 +116,5 @@ io.on('connection', (socket) => {
 });
 
 http.listen(3000, () => {
-  console.log('listening on *:3000');
+  console.log('server listening...');
 });
